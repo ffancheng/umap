@@ -123,26 +123,34 @@ umap.check.config = function(config=umap.defaults, ...) {
 #'
 #' @return d as matrix
 umap.prep.input = function(d, config) {
-  # for d into a matrix
-  if (is(d, "matrix")) {
-    d = d
-  } else if (is(d, "data.frame")) {
-    d = as.matrix(d)
+  
+  # if pre-computed umap.knn is provided
+  if(is(config$knn, "umap.knn")) {
+    return(config$knn$distances)
   } else {
-    umap.error("input must be a matrix or matrix-compatible\n")
+    
+    # for d into a matrix
+    if (is(d, "matrix")) {
+      d = d
+    } else if (is(d, "data.frame")) {
+      d = as.matrix(d)
+    } else {
+      umap.error("input must be a matrix or matrix-compatible\n")
+    }
+    # ensure data is numeric (not integer or other data type)
+    d[,1] = as.numeric(d[,1])
+    
+    # perhaps adjust the data matrix
+    if (config$metric %in% c("pearson", "pearson2")) {
+      # for pearson correlation distance, center by-sample
+      # (this avoids computing means during correlations)
+      d = t(d)
+      d = t(d) - apply(d, 2, mean)
+    }
+    
+    d
   }
-  # ensure data is numeric (not integer or other data type)
-  d[,1] = as.numeric(d[,1])
   
-  # perhaps adjust the data matrix
-  if (config$metric %in% c("pearson", "pearson2")) {
-    # for pearson correlation distance, center by-sample
-    # (this avoids computing means during correlations)
-    d = t(d)
-    d = t(d) - apply(d, 2, mean)
-  }
-  
-  d
 }
 
 
